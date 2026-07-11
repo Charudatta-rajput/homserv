@@ -211,4 +211,90 @@ class BookingRepository {
       throw Exception('Failed to create booking: $e');
     }
   }
+
+  // Get all bookings for a provider
+  Future<List<Booking>> getProviderBookings(String providerId) async {
+    try {
+      final response = await _supabase
+          .from('bookings')
+          .select('''
+          *,
+          customer:users!customer_id (
+            id,
+            name,
+            phone,
+            address
+          ),
+          service:services (
+            id,
+            name,
+            fixed_price
+          )
+        ''')
+          .eq('provider_id', providerId)
+          .order('scheduled_time', ascending: true);
+
+      return (response as List).map((json) => Booking.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch provider bookings: $e');
+    }
+  }
+
+// Accept booking
+  Future<void> acceptBooking(String bookingId) async {
+    try {
+      await _supabase
+          .from('bookings')
+          .update({
+        'status': 'accepted',
+        'accepted_at': DateTime.now().toIso8601String(),
+      })
+          .eq('id', bookingId);
+    } catch (e) {
+      throw Exception('Failed to accept booking: $e');
+    }
+  }
+
+// Reject booking
+  Future<void> rejectBooking(String bookingId) async {
+    try {
+      await _supabase
+          .from('bookings')
+          .update({
+        'status': 'rejected',
+        'rejected_at': DateTime.now().toIso8601String(),
+      })
+          .eq('id', bookingId);
+    } catch (e) {
+      throw Exception('Failed to reject booking: $e');
+    }
+  }
+
+// Complete booking (provider marks as complete)
+  Future<void> completeBooking(String bookingId) async {
+    try {
+      await _supabase
+          .from('bookings')
+          .update({
+        'status': 'completed',
+        'completed_at': DateTime.now().toIso8601String(),
+      })
+          .eq('id', bookingId);
+
+      // Update provider's total jobs completed
+      final booking = await _supabase
+          .from('bookings')
+          .select('provider_id')
+          .eq('id', bookingId)
+          .single();
+
+      if (booking['provider_id'] != null) {
+        await _supabase.rpc('increment_provider_jobs', params: {
+          'p_user_id': booking['provider_id'],
+        });
+      }
+    } catch (e) {
+      throw Exception('Failed to complete booking: $e');
+    }
+  }
 }

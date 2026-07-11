@@ -5,6 +5,7 @@ import 'provider_login_viewmodel.dart';
 import 'provider_login_state.dart';
 import '../signup/provider_signup_screen.dart';
 import '../../provider/dashboard/provider_dashboard.dart';
+import '../login/customer_login_screen.dart';
 
 class ProviderLogin extends StatefulWidget {
   const ProviderLogin({super.key});
@@ -30,13 +31,26 @@ class _ProviderLoginState extends State<ProviderLogin> {
     return ChangeNotifierProvider(
       create: (_) => ProviderLoginViewModel(),
       child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
         appBar: AppBar(
-          title: const Text('Provider Login'),
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
+          title: const Text(
+            'Provider Login',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.black54),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const CustomerLoginScreen()),
+              );
+            },
           ),
         ),
         body: SafeArea(
@@ -69,7 +83,13 @@ class _ProviderLoginState extends State<ProviderLogin> {
                         context: context,
                         barrierDismissible: false,
                         builder: (dialogContext) => AlertDialog(
-                          title: const Text('Verification Pending'),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          title: const Text(
+                            'Verification Pending',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           content: const Text(
                             'Your account is waiting for admin approval. '
                                 'You will be notified once verified.',
@@ -79,8 +99,8 @@ class _ProviderLoginState extends State<ProviderLogin> {
                               onPressed: () async {
                                 await Supabase.instance.client.auth.signOut();
                                 if (dialogContext.mounted) {
-                                  Navigator.pop(dialogContext); // Close dialog
-                                  Navigator.pop(context); // Go back
+                                  Navigator.pop(dialogContext);
+                                  Navigator.pop(context);
                                 }
                               },
                               child: const Text('OK'),
@@ -100,7 +120,13 @@ class _ProviderLoginState extends State<ProviderLogin> {
                         context: context,
                         barrierDismissible: false,
                         builder: (dialogContext) => AlertDialog(
-                          title: const Text('Verification Rejected'),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          title: const Text(
+                            'Verification Rejected',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           content: const Text(
                             'Your application has been rejected. '
                                 'Please contact support for more information.',
@@ -110,8 +136,8 @@ class _ProviderLoginState extends State<ProviderLogin> {
                               onPressed: () async {
                                 await Supabase.instance.client.auth.signOut();
                                 if (dialogContext.mounted) {
-                                  Navigator.pop(dialogContext); // Close dialog
-                                  Navigator.pop(context); // Go back
+                                  Navigator.pop(dialogContext);
+                                  Navigator.pop(context);
                                 }
                               },
                               child: const Text('OK'),
@@ -134,51 +160,135 @@ class _ProviderLoginState extends State<ProviderLogin> {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.work, size: 64, color: Colors.green),
-                    const SizedBox(height: 16),
+                    // Logo Container
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.work,
+                        size: 50,
+                        color: Color(0xFF10B981),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     const Text(
                       'Provider Login',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       'Login to manage your services',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 48),
-
-                    // Email
-                    TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
                       ),
-                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Email Field
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _emailController,
+                        decoration: InputDecoration(
+                          labelText: 'Email Address',
+                          labelStyle: TextStyle(
+                            color: Colors.grey.shade600,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.email_outlined,
+                            color: Color(0xFF10B981),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 16,
+                          ),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                      ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Password
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    // Password Field
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          labelStyle: TextStyle(
+                            color: Colors.grey.shade600,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline,
+                            color: Color(0xFF10B981),
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.grey.shade400,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 16,
+                          ),
                         ),
-                        border: const OutlineInputBorder(),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
 
                     // Login Button
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 54,
                       child: ElevatedButton(
                         onPressed: state is ProviderLoginLoading
                             ? null
@@ -189,32 +299,100 @@ class _ProviderLoginState extends State<ProviderLogin> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: const Color(0xFF10B981),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
+                          elevation: 0,
                         ),
                         child: state is ProviderLoginLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('LOGIN', style: TextStyle(fontSize: 16)),
+                            ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                            : const Text(
+                          'LOGIN',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
                     // Register Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don't have an account?"),
+                        Text(
+                          "Don't have an account?",
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 14,
+                          ),
+                        ),
                         TextButton(
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const ProviderSignupScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const ProviderSignupScreen(),
+                              ),
                             );
                           },
-                          child: const Text('Register as Provider'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF10B981),
+                          ),
+                          child: const Text(
+                            'Register as Provider',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Switch to Customer Login
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Are you a customer?',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CustomerLoginScreen(),
+                              ),
+                            );
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF2563EB),
+                          ),
+                          child: const Text(
+                            'Customer Login',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
                         ),
                       ],
                     ),
