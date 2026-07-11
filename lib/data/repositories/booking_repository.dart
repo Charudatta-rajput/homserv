@@ -149,4 +149,66 @@ class BookingRepository {
       throw Exception('Failed to rate booking: $e');
     }
   }
+  Future<Booking> createBooking({
+    required String customerId,
+    required String providerId,
+    required String serviceId,
+    required DateTime scheduledTime,
+    required int totalPrice,
+    String? address,
+    String? notes,
+  }) async {
+    try {
+
+      final bookingNumber = 'BKG${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
+      final Map<String, dynamic> insertData = {
+        'booking_number': bookingNumber,
+        'customer_id': customerId,
+        'provider_id': providerId,
+        'service_id': serviceId,
+        'scheduled_time': scheduledTime.toIso8601String(),
+        'status': 'pending',
+        'total_price': totalPrice,
+        'total_amount': totalPrice,
+        'payment_status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      if (address != null && address.isNotEmpty) {
+        insertData['address'] = address;
+      }
+      if (notes != null && notes.isNotEmpty) {
+        insertData['notes'] = notes;
+      }
+
+      final response = await _supabase
+          .from('bookings')
+          .insert(insertData)
+          .select('''
+          *,
+          customer:users!customer_id (
+            id,
+            name,
+            phone,
+            address
+          ),
+          provider:users!provider_id (
+            id,
+            name,
+            phone
+          ),
+          service:services (
+            id,
+            name,
+            fixed_price
+          )
+        ''')
+          .single();
+
+      return Booking.fromJson(response);
+    } catch (e) {
+      throw Exception('Failed to create booking: $e');
+    }
+  }
 }

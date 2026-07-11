@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:homserv/presentation/auth/login/customer_login_screen.dart';
 import 'package:homserv/presentation/auth/login/provider_login_screen.dart';
+import 'package:homserv/presentation/auth/signup/customer_signup_screen.dart';
+import 'package:homserv/presentation/auth/signup/provider_signup_screen.dart';
+import 'package:homserv/presentation/customer/home/customer_home.dart';
+import 'package:homserv/presentation/customer/services/service_screen.dart';
+import 'package:homserv/presentation/customer/providers/provider_list_screen.dart';
+import 'package:homserv/presentation/customer/bookings/my_bookings_screen.dart';
+import 'package:homserv/presentation/provider/dashboard/provider_dashboard.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_constants.dart';
-import 'presentation/customer/home/customer_home.dart';
-import 'presentation/provider/dashboard/provider_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,8 +38,12 @@ class MyApp extends StatelessWidget {
         '/splash': (context) => const SplashScreen(),
         '/customer-login': (context) => const CustomerLoginScreen(),
         '/provider-login': (context) => const ProviderLogin(),
+        '/customer-signup': (context) => const CustomerSignupScreen(),
+        '/provider-signup': (context) => const ProviderSignupScreen(),
         '/customer-home': (context) => const CustomerHome(),
         '/provider-dashboard': (context) => const ProviderDashboard(),
+        '/services': (context) => const ServicesScreen(),
+        '/my-bookings': (context) => const MyBookingsScreen(),
       },
       debugShowCheckedModeBanner: false,
     );

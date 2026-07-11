@@ -29,13 +29,21 @@ class _ServicesScreenState extends State<ServicesScreen> {
     return ChangeNotifierProvider.value(
       value: _viewModel,
       child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
         appBar: AppBar(
-          title: const Text('Services'),
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.white,
+          title: const Text(
+            'Services',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 0,
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh, color: Colors.black54),
               onPressed: () {
                 _viewModel.refreshServices();
               },
@@ -60,18 +68,21 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
             if (state is ServiceLoading) {
               return const Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: Color(0xFF2563EB),
+                ),
               );
             }
 
             if (state is ServiceLoaded) {
               return Column(
                 children: [
-                  // Category Tabs
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  // Category Tabs - Cleaner Design
+                  Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     child: SizedBox(
-                      height: 50,
+                      height: 42,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -82,19 +93,34 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
                           return Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                            child: ChoiceChip(
-                              label: Text(category),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                if (selected) {
-                                  viewModel.filterByCategory(category);
-                                }
+                            child: InkWell(
+                              onTap: () {
+                                viewModel.filterByCategory(category);
                               },
-                              selectedColor: Colors.blue.shade100,
-                              backgroundColor: Colors.grey.shade200,
-                              labelStyle: TextStyle(
-                                color: isSelected ? Colors.blue.shade900 : Colors.black87,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? const Color(0xFF2563EB)
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  category,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.grey.shade700,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    fontSize: 13,
+                                  ),
+                                ),
                               ),
                             ),
                           );
@@ -103,19 +129,48 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     ),
                   ),
 
+                  const SizedBox(height: 8),
+
                   // Services Grid
                   Expanded(
                     child: state.filteredServices.isEmpty
-                        ? const Center(
-                      child: Text('No services available in this category'),
+                        ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: Colors.grey.shade300,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No services available',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade500,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Try selecting a different category',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                         : GridView.builder(
                       padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         childAspectRatio: 0.85,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
                       ),
                       itemCount: state.filteredServices.length,
                       itemBuilder: (context, index) {
@@ -139,9 +194,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
   Widget _buildServiceCard(BuildContext context, Service service) {
     return Card(
-      elevation: 3,
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade100, width: 1),
       ),
       child: InkWell(
         onTap: () {
@@ -156,17 +212,24 @@ class _ServicesScreenState extends State<ServicesScreen> {
             ),
           );
         },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Service Icon
-              Icon(
-                _getIconForService(service.name),
-                size: 48,
-                color: Colors.blue,
+              // Service Icon with Background
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  _getIconForService(service.name),
+                  size: 36,
+                  color: const Color(0xFF2563EB),
+                ),
               ),
               const SizedBox(height: 12),
               // Service Name
@@ -176,27 +239,49 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               // Price
-              Text(
-                '₹${service.fixedPrice}',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade700,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    '₹',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                  Text(
+                    '${service.fixedPrice}',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 2),
               // Estimated Time
-              Text(
-                '${service.estimatedMinutes} min',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${service.estimatedMinutes} min',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],

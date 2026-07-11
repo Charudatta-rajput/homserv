@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart' as provider_package;
+import '../bookings/create_booking_screen.dart';
 import 'provider_list_viewmodel.dart';
 import 'provider_list_state.dart';
 import '../../../data/models/provider.dart';
@@ -41,13 +42,21 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
     return provider_package.ChangeNotifierProvider.value(
       value: _viewModel,
       child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
         appBar: AppBar(
-          title: Text(widget.serviceName),
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.white,
+          title: Text(
+            widget.serviceName,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 0,
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh, color: Colors.black54),
               onPressed: () {
                 _viewModel.loadProviders(
                   serviceId: widget.serviceId,
@@ -77,7 +86,9 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
 
             if (state is ProviderListLoading) {
               return const Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: Color(0xFF2563EB),
+                ),
               );
             }
 
@@ -110,10 +121,11 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
 
   Widget _buildProviderCard(BuildContext context, Provider provider) {
     return Card(
-      elevation: 3,
-      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 14),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade100, width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -130,89 +142,156 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
                     ),
                   ),
                 ),
-                Row(
-                  children: [
-                    const Icon(Icons.star, color: Colors.orange, size: 18),
-                    const SizedBox(width: 4),
-                    Text(
-                      provider.getRatingDisplay(),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.star,
+                        color: Colors.orange,
+                        size: 16,
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '(${provider.totalJobsCompleted} jobs)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
+                      const SizedBox(width: 2),
+                      Text(
+                        provider.getRatingDisplay(),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
                       ),
-                    ),
-                  ],
+                      Text(
+                        ' (${provider.totalJobsCompleted})',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
             // Row: Experience + Distance
             Row(
               children: [
-                const Icon(Icons.work_history, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  '${provider.experienceYears} years experience',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade700,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.work_history, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${provider.experienceYears} yrs',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 16),
-                const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  provider.getDistanceDisplay(),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade700,
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        provider.getDistanceDisplay(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 14),
 
             // Row: Price + Book Now
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '₹${widget.fixedPrice}',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade700,
-                  ),
+                Row(
+                  children: [
+                    const Text(
+                      '₹',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF10B981),
+                      ),
+                    ),
+                    Text(
+                      '${widget.fixedPrice}',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF10B981),
+                      ),
+                    ),
+                    Text(
+                      ' fixed',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Booking coming soon!'),
-                        backgroundColor: Colors.blue,
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CreateBookingScreen(
+                          provider: provider,
+                          serviceId: widget.serviceId,
+                          serviceName: widget.serviceName,
+                          fixedPrice: widget.fixedPrice,
+                        ),
                       ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: const Color(0xFF2563EB),
                     foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Book Now',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  child: const Text('Book Now'),
                 ),
               ],
             ),
@@ -229,24 +308,31 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.location_off,
-              size: 80,
-              color: Colors.grey,
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.location_off,
+                size: 64,
+                color: Colors.grey,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             const Text(
-              'This service is not available in your area yet',
+              'No providers available',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Try another service or check back later',
+              'We couldn\'t find any providers for\n${widget.serviceName} in your area',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -265,8 +351,12 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
               icon: const Icon(Icons.refresh),
               label: const Text('Refresh'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: const Color(0xFF2563EB),
                 foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
@@ -282,23 +372,31 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 80,
-              color: Colors.red,
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             const Text(
               'Something went wrong',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Please try again',
+              'Please try again later',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -317,8 +415,12 @@ class _ProviderListScreenState extends State<ProviderListScreen> {
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: const Color(0xFF2563EB),
                 foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
