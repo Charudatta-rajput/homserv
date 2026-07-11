@@ -4,6 +4,7 @@ import 'provider_signup_viewmodel.dart';
 import 'provider_signup_state.dart';
 import '../location/location_picker_screen.dart';
 import '../login/provider_login_screen.dart';
+import '../../../data/models/service.dart';
 
 class ProviderSignupScreen extends StatefulWidget {
   const ProviderSignupScreen({super.key});
@@ -22,30 +23,26 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
   bool _obscurePassword = true;
   bool _showProfessionalFields = false;
 
-  // Location data
   String _selectedAddress = '';
   double _selectedLat = 0;
   double _selectedLng = 0;
   bool _locationSelected = false;
 
-  // Trade selection
   String _selectedTrade = '';
-  final List<String> _tradeOptions = [
-    'Plumber',
-    'Electrician',
-    'AC Technician',
-    'Carpenter',
-    'Painter',
-    'Pest Control',
-    'Water Tank Cleaner',
-    'Sofa Cleaner',
-    'Appliance Repair',
-    'Moving Helper',
-    'Gardener',
-    'CCTV Installer',
-    'Tiler',
-    'Plasterer',
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    Future.microtask(() {
+      final viewModel = Provider.of<ProviderSignupViewModel>(context, listen: false);
+      viewModel.loadServices();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +67,12 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
         body: Consumer<ProviderSignupViewModel>(
           builder: (context, viewModel, child) {
             final state = viewModel.state;
+
+            if (viewModel.availableServices.isEmpty && !viewModel.servicesLoading) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                viewModel.loadServices();
+              });
+            }
 
             if (state is ProviderSignupError) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -124,7 +127,6 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Name
                     TextField(
                       controller: _nameController,
                       decoration: const InputDecoration(
@@ -134,7 +136,6 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Phone
                     TextField(
                       controller: _phoneController,
                       decoration: const InputDecoration(
@@ -145,7 +146,6 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Email
                     TextField(
                       controller: _emailController,
                       decoration: const InputDecoration(
@@ -156,7 +156,6 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Password
                     TextField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -171,7 +170,6 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Location
                     ElevatedButton.icon(
                       onPressed: () async {
                         final result = await Navigator.push(
@@ -215,7 +213,6 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Next Button
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -223,25 +220,25 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                         onPressed: () {
                           if (_nameController.text.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Enter name')),
+                              const SnackBar(content: Text('Enter your full name')),
                             );
                             return;
                           }
                           if (_phoneController.text.length != 10) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Enter valid phone')),
+                              const SnackBar(content: Text('Enter valid 10-digit phone number')),
                             );
                             return;
                           }
                           if (!_emailController.text.contains('@')) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Enter valid email')),
+                              const SnackBar(content: Text('Enter valid email address')),
                             );
                             return;
                           }
                           if (_passwordController.text.length < 6) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Password must be 6+ chars')),
+                              const SnackBar(content: Text('Password must be at least 6 characters')),
                             );
                             return;
                           }
@@ -263,7 +260,6 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                       ),
                     ),
                   ] else ...[
-                    // Professional Details Section
                     const Icon(Icons.badge, size: 48, color: Colors.green),
                     const SizedBox(height: 16),
                     const Text(
@@ -272,35 +268,10 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Trade Dropdown
-                    DropdownButtonFormField<String>(
-                      value: _selectedTrade.isEmpty ? null : _selectedTrade,
-                      decoration: const InputDecoration(
-                        labelText: 'Select Your Trade *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.work),
-                      ),
-                      items: _tradeOptions.map((String trade) {
-                        return DropdownMenuItem<String>(
-                          value: trade,
-                          child: Text(trade),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedTrade = newValue!;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please select your trade';
-                        }
-                        return null;
-                      },
-                    ),
+                    // Trade Dropdown - Simplified
+                    _buildSimpleTradeDropdown(viewModel),
                     const SizedBox(height: 16),
 
-                    // Experience
                     TextField(
                       controller: _experienceController,
                       decoration: const InputDecoration(
@@ -312,14 +283,12 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Document Upload Section
                     const Text(
                       'Documents for Verification',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
 
-                    // Aadhar Card (Required)
                     _buildDocumentTile(
                       context,
                       title: 'Aadhaar Card *',
@@ -329,7 +298,6 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // ITI Certificate (Required)
                     _buildDocumentTile(
                       context,
                       title: 'ITI / Trade Certificate *',
@@ -339,7 +307,6 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Police Verification (Optional)
                     _buildDocumentTile(
                       context,
                       title: 'Police Verification (Optional)',
@@ -349,7 +316,6 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Submit Button
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -359,7 +325,7 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
                             : () {
                           if (_selectedTrade.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please select your trade')),
+                              const SnackBar(content: Text('Please select your service')),
                             );
                             return;
                           }
@@ -412,6 +378,63 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
           },
         ),
       ),
+    );
+  }
+
+  // SIMPLIFIED TRADE DROPDOWN - No complex layouts
+  Widget _buildSimpleTradeDropdown(ProviderSignupViewModel viewModel) {
+    if (viewModel.servicesLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (viewModel.availableServices.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.red.shade300),
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.red.shade50,
+        ),
+        child: const Text(
+          'No services available. Please contact admin.',
+          style: TextStyle(color: Colors.red),
+        ),
+      );
+    }
+
+    return DropdownButtonFormField<String>(
+      isExpanded: true,
+      value: _selectedTrade.isEmpty ? null : _selectedTrade,
+      decoration: const InputDecoration(
+        labelText: 'Select Your Service *',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.work),
+      ),
+      items: viewModel.availableServices.map((Service service) {
+        return DropdownMenuItem<String>(
+          value: service.name,
+          child: Text(
+            '${service.name}  (₹${service.fixedPrice})',
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
+      }).toList(),
+      onChanged: (String? newValue) {
+        setState(() {
+          _selectedTrade = newValue!;
+        });
+      },
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please select your service';
+        }
+        return null;
+      },
     );
   }
 

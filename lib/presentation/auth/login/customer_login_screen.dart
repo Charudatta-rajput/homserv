@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../customer/home/customer_home.dart';
+import '../../provider/dashboard/provider_dashboard.dart';
 import 'customer_login_viewmodel.dart';
 import 'customer_login_state.dart';
 import '../signup/customer_signup_screen.dart';
@@ -90,10 +92,40 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen> {
 
                       if (state is CustomerLoginSuccess) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const CustomerHome()),
-                          );
+                          // After login, check user role and navigate
+                          final supabase = Supabase.instance.client;
+                          final user = supabase.auth.currentUser;
+
+                          if (user != null) {
+                            supabase
+                                .from('users')
+                                .select('role')
+                                .eq('id', user.id)
+                                .maybeSingle()
+                                .then((userData) {
+                              final role = userData?['role'] ?? 'customer';
+                              if (mounted) {
+                                if (role == 'provider') {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const ProviderDashboard()),
+                                  );
+                                } else {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const CustomerHome()),
+                                  );
+                                }
+                              }
+                            });
+                          } else {
+                            if (mounted) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (_) => const CustomerHome()),
+                              );
+                            }
+                          }
                           viewModel.resetState();
                         });
                       }

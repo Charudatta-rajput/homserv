@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/provider_list_screen.dart';
 import 'service_viewmodel.dart';
 import 'service_state.dart';
 import '../../../data/models/service.dart';
@@ -144,13 +145,16 @@ class _ServicesScreenState extends State<ServicesScreen> {
       ),
       child: InkWell(
         onTap: () {
-          // Navigate to provider list screen
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (_) => ProvidersScreen(serviceId: service.id),
-          //   ),
-          // );
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProviderListScreen(
+                serviceId: service.id,
+                serviceName: service.name,
+                fixedPrice: service.fixedPrice,
+              ),
+            ),
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'provider_signup_state.dart';
+import '../../../data/repositories/service_repository.dart';
+import '../../../data/models/service.dart';
 
 class ProviderSignupViewModel extends ChangeNotifier {
   ProviderSignupState _state = ProviderSignupInitial();
@@ -17,12 +19,35 @@ class ProviderSignupViewModel extends ChangeNotifier {
   XFile? get itiImage => _itiImage;
   XFile? get policeImage => _policeImage;
 
+  // Services
+  final ServiceRepository _serviceRepository = ServiceRepository();
+  List<Service> _availableServices = [];
+  List<Service> get availableServices => _availableServices;
+  bool _servicesLoading = false;
+  bool get servicesLoading => _servicesLoading;
+
   void _setState(ProviderSignupState newState) {
     _state = newState;
     notifyListeners();
   }
+// In loadServices() method
+  Future<void> loadServices() async {
+    _servicesLoading = true;
+    notifyListeners();
 
-  // Pick image from gallery
+    try {
+      _availableServices = await _serviceRepository.getAllServices();
+      print('✅ Services loaded: ${_availableServices.length}');  // Debug
+      print('📋 Services: ${_availableServices.map((s) => s.name).toList()}');  // Debug
+    } catch (e) {
+      print('❌ Error loading services: $e');  // Debug
+    } finally {
+      _servicesLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Pick image from gallery or camera
   Future<void> pickImage(String type, {ImageSource source = ImageSource.gallery}) async {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: source);
@@ -51,17 +76,12 @@ class ProviderSignupViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Upload image to Supabase Storage - FIXED VERSION
+  // Upload image to Supabase Storage
   Future<String?> _uploadImage(XFile image, String userId, String docType) async {
     try {
-      // Convert XFile to File
       final file = File(image.path);
-      final filePath = '$userId/$docType.jpg';
+      final filePath = 'providers/$userId/$docType.jpg';
 
-      debugPrint('Uploading to: providers/$filePath');
-      debugPrint('File size: ${await file.length()} bytes');
-
-      // Upload the File directly
       await Supabase.instance.client.storage
           .from('provider_documents')
           .upload(filePath, file, fileOptions: const FileOptions(
@@ -69,15 +89,12 @@ class ProviderSignupViewModel extends ChangeNotifier {
         upsert: true,
       ));
 
-      // Get public URL
       final url = Supabase.instance.client.storage
           .from('provider_documents')
           .getPublicUrl(filePath);
 
-      debugPrint('Upload successful: $url');
       return url;
     } catch (e) {
-      debugPrint('Upload error for $docType: $e');
       return null;
     }
   }
@@ -97,7 +114,7 @@ class ProviderSignupViewModel extends ChangeNotifier {
     _setState(ProviderSignupLoading());
 
     try {
-      // 1. Create auth user FIRST
+      // 1. Create auth user
       final authResponse = await Supabase.instance.client.auth.signUp(
         email: email,
         password: password,
@@ -109,24 +126,19 @@ class ProviderSignupViewModel extends ChangeNotifier {
       }
 
       final userId = authResponse.user!.id;
-      debugPrint('User created with ID: $userId');
 
-      // 2. Upload documents AFTER user is created
-      String? aadharUrl;
-      String? itiUrl;
-      String? policeUrl;
+      // 2. Upload documents
+      final aadharUrl = _aadharImage != null
+          ? await _uploadImage(_aadharImage!, userId, 'aadhar')
+          : null;
 
-      if (_aadharImage != null) {
-        aadharUrl = await _uploadImage(_aadharImage!, userId, 'aadhar');
-      }
+      final itiUrl = _itiImage != null
+          ? await _uploadImage(_itiImage!, userId, 'iti_certificate')
+          : null;
 
-      if (_itiImage != null) {
-        itiUrl = await _uploadImage(_itiImage!, userId, 'iti_certificate');
-      }
-
-      if (_policeImage != null) {
-        policeUrl = await _uploadImage(_policeImage!, userId, 'police_verification');
-      }
+      final policeUrl = _policeImage != null
+          ? await _uploadImage(_policeImage!, userId, 'police_verification')
+          : null;
 
       // 3. Insert into users table
       await Supabase.instance.client.from('users').insert({
@@ -139,7 +151,6 @@ class ProviderSignupViewModel extends ChangeNotifier {
         'location_lat': latitude,
         'location_lng': longitude,
       });
-      debugPrint('User inserted into users table');
 
       // 4. Insert into provider_profiles table
       await Supabase.instance.client.from('provider_profiles').insert({
@@ -154,11 +165,9 @@ class ProviderSignupViewModel extends ChangeNotifier {
         'total_jobs_completed': 0,
         'is_active': true,
       });
-      debugPrint('Provider profile inserted');
 
       _setState(ProviderSignupSuccess('Registration submitted! Awaiting admin verification.'));
     } catch (e) {
-      debugPrint('Registration error: $e');
       _setState(ProviderSignupError(e.toString()));
     }
   }
