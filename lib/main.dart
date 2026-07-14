@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:homserv/presentation/auth/login/customer_login_screen.dart';
 import 'package:homserv/presentation/auth/login/provider_login_screen.dart';
 import 'package:homserv/presentation/auth/signup/customer_signup_screen.dart';
@@ -10,9 +12,25 @@ import 'package:homserv/presentation/customer/bookings/my_bookings_screen.dart';
 import 'package:homserv/presentation/provider/dashboard/provider_dashboard.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_constants.dart';
+import 'firebase_options.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await NotificationService.initialize();
+
+  FirebaseMessaging.onMessage.listen((message) {
+    NotificationService.showLocalNotification(message);
+  });
+
+  FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    print('📱 Opened from notification: ${message.data}');
+  });
 
   await Supabase.initialize(
     url: AppConstants.supabaseUrl,
@@ -65,7 +83,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuthAndNavigate() async {
-    // Show splash for a moment
     await Future.delayed(const Duration(milliseconds: 800));
 
     final supabase = Supabase.instance.client;
@@ -74,7 +91,6 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     if (session != null) {
-      // User is logged in, check their role
       try {
         final userData = await supabase
             .from('users')
@@ -92,13 +108,11 @@ class _SplashScreenState extends State<SplashScreen> {
           Navigator.pushReplacementNamed(context, '/customer-home');
         }
       } catch (e) {
-        // Error fetching role, go to login
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/customer-login');
         }
       }
     } else {
-      // No session, go to login
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/customer-login');
       }

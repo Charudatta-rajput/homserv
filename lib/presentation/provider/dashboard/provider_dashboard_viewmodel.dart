@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/booking.dart';
 import '../../../data/repositories/booking_repository.dart';
 import 'provider_dashboard_state.dart';
@@ -66,7 +67,7 @@ class ProviderDashboardViewModel extends ChangeNotifier {
         averageRating: avgRating,
       ));
     } catch (e) {
-      _setState(ProviderDashboardError(e.toString()));
+      _setState(ProviderDashboardError('Failed to load dashboard: ${e.toString()}'));
     }
   }
 
@@ -75,7 +76,7 @@ class ProviderDashboardViewModel extends ChangeNotifier {
       await _repository.acceptBooking(bookingId);
       await loadDashboard();
     } catch (e) {
-      _setState(ProviderDashboardError(e.toString()));
+      _setState(ProviderDashboardError('Failed to accept booking: ${e.toString()}'));
     }
   }
 
@@ -84,7 +85,7 @@ class ProviderDashboardViewModel extends ChangeNotifier {
       await _repository.rejectBooking(bookingId);
       await loadDashboard();
     } catch (e) {
-      _setState(ProviderDashboardError(e.toString()));
+      _setState(ProviderDashboardError('Failed to reject booking: ${e.toString()}'));
     }
   }
 
@@ -93,9 +94,11 @@ class ProviderDashboardViewModel extends ChangeNotifier {
       await _repository.completeBooking(bookingId);
       await loadDashboard();
     } catch (e) {
-      _setState(ProviderDashboardError(e.toString()));
+      _setState(ProviderDashboardError('Failed to complete booking: ${e.toString()}'));
     }
   }
+
+
 
   void resetError() {
     if (_state is ProviderDashboardError) {

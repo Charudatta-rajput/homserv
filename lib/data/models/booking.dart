@@ -19,6 +19,7 @@ class Booking {
   final DateTime? customerConfirmedAt;
   final DateTime createdAt;
   final String? customerName;
+  final String? customerPhone;
   final String? providerName;
   final String? serviceName;
   final int? servicePrice;
@@ -42,6 +43,7 @@ class Booking {
     this.customerConfirmedAt,
     required this.createdAt,
     this.customerName,
+    this.customerPhone,
     this.providerName,
     this.serviceName,
     this.servicePrice,
@@ -79,6 +81,7 @@ class Booking {
           ? DateTime.parse(json['created_at'])
           : DateTime.now(),
       customerName: json['customer']?['name'] ?? json['customer_name'],
+      customerPhone: json['customer']?['phone'] ?? json['customer_phone'],
       providerName: json['provider']?['name'] ?? json['provider_name'],
       serviceName: json['service']?['name'] ?? json['service_name'],
       servicePrice: json['service']?['fixed_price'] ?? json['service_price'],

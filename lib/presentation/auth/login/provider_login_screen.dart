@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../services/notification_service.dart';
 import 'provider_login_viewmodel.dart';
 import 'provider_login_state.dart';
 import '../signup/provider_signup_screen.dart';
 import '../../provider/dashboard/provider_dashboard.dart';
 import '../login/customer_login_screen.dart';
+
 
 class ProviderLogin extends StatefulWidget {
   const ProviderLogin({super.key});
@@ -60,7 +62,6 @@ class _ProviderLoginState extends State<ProviderLogin> {
               builder: (context, viewModel, child) {
                 final state = viewModel.state;
 
-                // Handle errors
                 if (state is ProviderLoginError) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -73,12 +74,9 @@ class _ProviderLoginState extends State<ProviderLogin> {
                   });
                 }
 
-                // Handle success
                 if (state is ProviderLoginSuccess) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    // Check verification status
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
                     if (state.verificationStatus == 'pending') {
-                      // Show pending verification dialog
                       showDialog(
                         context: context,
                         barrierDismissible: false,
@@ -110,6 +108,15 @@ class _ProviderLoginState extends State<ProviderLogin> {
                       );
                       viewModel.resetState();
                     } else if (state.verificationStatus == 'approved') {
+                      final token = await NotificationService.getFCMToken();
+                      if (token != null) {
+                        await Supabase.instance.client
+                            .from('user_devices')
+                            .upsert({
+                          'user_id': state.userId,
+                          'fcm_token': token,
+                        }, onConflict: 'fcm_token');
+                      }
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => const ProviderDashboard()),
@@ -147,7 +154,6 @@ class _ProviderLoginState extends State<ProviderLogin> {
                       );
                       viewModel.resetState();
                     } else {
-                      // Default - go to dashboard
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => const ProviderDashboard()),
@@ -160,7 +166,6 @@ class _ProviderLoginState extends State<ProviderLogin> {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo Container
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -192,7 +197,6 @@ class _ProviderLoginState extends State<ProviderLogin> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Email Field
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -232,7 +236,6 @@ class _ProviderLoginState extends State<ProviderLogin> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Password Field
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -285,7 +288,6 @@ class _ProviderLoginState extends State<ProviderLogin> {
                     ),
                     const SizedBox(height: 28),
 
-                    // Login Button
                     SizedBox(
                       width: double.infinity,
                       height: 54,
@@ -327,7 +329,6 @@ class _ProviderLoginState extends State<ProviderLogin> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Register Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -363,7 +364,6 @@ class _ProviderLoginState extends State<ProviderLogin> {
 
                     const SizedBox(height: 16),
 
-                    // Switch to Customer Login
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

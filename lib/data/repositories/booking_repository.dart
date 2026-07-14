@@ -149,6 +149,7 @@ class BookingRepository {
       throw Exception('Failed to rate booking: $e');
     }
   }
+
   Future<Booking> createBooking({
     required String customerId,
     required String providerId,
@@ -159,6 +160,10 @@ class BookingRepository {
     String? notes,
   }) async {
     try {
+      print('📦📦📦 createBooking STARTED');
+      print('📦 customerId: $customerId');
+      print('📦 providerId: $providerId');
+      print('📦 serviceId: $serviceId');
 
       final bookingNumber = 'BKG${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
@@ -181,6 +186,8 @@ class BookingRepository {
       if (notes != null && notes.isNotEmpty) {
         insertData['notes'] = notes;
       }
+
+      print('📦 Inserting booking...');
 
       final response = await _supabase
           .from('bookings')
@@ -206,13 +213,45 @@ class BookingRepository {
         ''')
           .single();
 
-      return Booking.fromJson(response);
+      final booking = Booking.fromJson(response);
+      print('✅ Booking inserted! ID: ${booking.id}');
+
+      // ✅ Send notification to provider
+      print('📤 Getting customer name...');
+      final customer = await _supabase
+          .from('users')
+          .select('name')
+          .eq('id', customerId)
+          .single();
+      print('📤 Customer: ${customer['name']}');
+
+      print('📤 Getting service name...');
+      final service = await _supabase
+          .from('services')
+          .select('name')
+          .eq('id', serviceId)
+          .single();
+      print('📤 Service: ${service['name']}');
+
+      print('📤 Sending notification to provider: $providerId');
+      await _sendNotification(
+        recipientId: providerId,
+        title: '🔔 New Booking Request',
+        body: '${customer['name']} booked ${service['name']}',
+        data: {
+          'booking_id': booking.id,
+          'type': 'new_booking',
+        },
+      );
+      print('✅ Notification sent successfully!');
+
+      return booking;
     } catch (e) {
+      print('❌❌❌ createBooking ERROR: $e');
       throw Exception('Failed to create booking: $e');
     }
   }
 
-  // Get all bookings for a provider
   Future<List<Booking>> getProviderBookings(String providerId) async {
     try {
       final response = await _supabase
@@ -240,9 +279,25 @@ class BookingRepository {
     }
   }
 
-// Accept booking
   Future<void> acceptBooking(String bookingId) async {
     try {
+      print('📦 acceptBooking STARTED: $bookingId');
+
+      // Get booking details first (for notification)
+      final bookingData = await _supabase
+          .from('bookings')
+          .select('customer_id, provider_id, booking_number')
+          .eq('id', bookingId)
+          .single();
+
+      // Get provider name
+      final provider = await _supabase
+          .from('users')
+          .select('name')
+          .eq('id', bookingData['provider_id'])
+          .single();
+
+      // Update booking status
       await _supabase
           .from('bookings')
           .update({
@@ -250,7 +305,23 @@ class BookingRepository {
         'accepted_at': DateTime.now().toIso8601String(),
       })
           .eq('id', bookingId);
+
+      print('✅ Booking accepted!');
+
+      // Send notification to customer
+      print('📤 Sending notification to customer: ${bookingData['customer_id']}');
+      await _sendNotification(
+        recipientId: bookingData['customer_id'],
+        title: '✅ Booking Accepted',
+        body: '${provider['name']} accepted your booking #${bookingData['booking_number']}',
+        data: {
+          'booking_id': bookingId,
+          'type': 'accepted',
+        },
+      );
+      print('✅ Notification sent!');
     } catch (e) {
+      print('❌❌❌ acceptBooking ERROR: $e');
       throw Exception('Failed to accept booking: $e');
     }
   }
@@ -273,6 +344,23 @@ class BookingRepository {
 // Complete booking (provider marks as complete)
   Future<void> completeBooking(String bookingId) async {
     try {
+      print('📦 completeBooking STARTED: $bookingId');
+
+      // Get booking details first (for notification)
+      final bookingData = await _supabase
+          .from('bookings')
+          .select('customer_id, provider_id, booking_number')
+          .eq('id', bookingId)
+          .single();
+
+      // Get provider name
+      final provider = await _supabase
+          .from('users')
+          .select('name')
+          .eq('id', bookingData['provider_id'])
+          .single();
+
+      // Update booking status
       await _supabase
           .from('bookings')
           .update({
@@ -282,19 +370,57 @@ class BookingRepository {
           .eq('id', bookingId);
 
       // Update provider's total jobs completed
-      final booking = await _supabase
-          .from('bookings')
-          .select('provider_id')
-          .eq('id', bookingId)
-          .single();
+      await _supabase.rpc('increment_provider_jobs', params: {
+        'p_user_id': bookingData['provider_id'],
+      });
 
-      if (booking['provider_id'] != null) {
-        await _supabase.rpc('increment_provider_jobs', params: {
-          'p_user_id': booking['provider_id'],
-        });
-      }
+      print('✅ Booking completed!');
+
+      // Send notification to customer
+      print('📤 Sending notification to customer: ${bookingData['customer_id']}');
+      await _sendNotification(
+        recipientId: bookingData['customer_id'],
+        title: '✅ Job Completed',
+        body: '${provider['name']} completed your booking #${bookingData['booking_number']}. Please confirm.',
+        data: {
+          'booking_id': bookingId,
+          'type': 'completed',
+        },
+      );
+      print('✅ Notification sent!');
     } catch (e) {
+      print('❌❌❌ completeBooking ERROR: $e');
       throw Exception('Failed to complete booking: $e');
+    }
+  }
+
+  Future<void> _sendNotification({
+    required String recipientId,
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+  }) async {
+    print('📤📤📤 _sendNotification CALLED');
+    print('📤 recipientId: $recipientId');
+    print('📤 title: $title');
+    print('📤 body: $body');
+
+    try {
+      print('📤 Calling Supabase Edge Function...');
+      final response = await _supabase.functions.invoke(
+        'send-notification',
+        body: {
+          'recipient_id': recipientId,
+          'title': title,
+          'body': body,
+          'data': data ?? {},
+        },
+      );
+      print('✅ Edge Function response: $response');
+      print('✅ _sendNotification completed successfully!');
+    } catch (e) {
+      print('❌❌❌ _sendNotification ERROR: $e');
+      print('❌ Failed to send notification: $e');
     }
   }
 }

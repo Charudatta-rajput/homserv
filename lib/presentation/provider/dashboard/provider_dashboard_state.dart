@@ -30,3 +30,5 @@ class ProviderDashboardError extends ProviderDashboardState {
   final String message;
   ProviderDashboardError(this.message);
 }
+
+
