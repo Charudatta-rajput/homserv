@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bookings/my_bookings_screen.dart';
 import '../services/service_screen.dart';
 import '../support/support_screen.dart';
+import '../profile/profile_screen.dart';
 
 class CustomerHome extends StatelessWidget {
   const CustomerHome({super.key});
@@ -56,14 +57,17 @@ class CustomerHome extends StatelessWidget {
                         constraints: const BoxConstraints(),
                       ),
                       const SizedBox(width: 12),
+                      // Profile Icon
                       IconButton(
-                        onPressed: () async {
-                          await Supabase.instance.client.auth.signOut();
-                          if (context.mounted) {
-                            Navigator.pushReplacementNamed(context, '/customer-login');
-                          }
+                        icon: const Icon(Icons.person_outline, color: Colors.white70, size: 22),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(),
+                            ),
+                          );
                         },
-                        icon: const Icon(Icons.logout, color: Colors.white70, size: 22),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
