@@ -67,7 +67,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -118,38 +117,50 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.home_repair_service,
-              size: 80,
-              color: Colors.blue,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'HomServ',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF0F172A),
+              Color(0xFF1E293B),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo with glow effect
+              Container(
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F766E).withOpacity(0.3),
+                      blurRadius: 60,
+                      spreadRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  'assets/images/splashscreen.png',
+                  width: 250,   // ← Increased size
+                  height: 200,
+                  fit: BoxFit.contain,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Home Services Platform',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
+              const SizedBox(height: 30),
+              const CircularProgressIndicator(
+                color: Color(0xFF0F766E),
+                strokeWidth: 2,
               ),
-            ),
-            const SizedBox(height: 24),
-            const CircularProgressIndicator(),
-          ],
+            ],
+          ),
         ),
       ),
     );
