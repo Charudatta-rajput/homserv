@@ -157,6 +157,11 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
     }
   }
 
+
+  Future<void> _refreshDashboard() async {
+    await _viewModel.loadDashboard();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
@@ -176,12 +181,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
           elevation: 0,
           automaticallyImplyLeading: false,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.black54),
-              onPressed: () {
-                _viewModel.loadDashboard();
-              },
-            ),
             IconButton(
               onPressed: () async {
                 await Supabase.instance.client.auth.signOut();
@@ -213,130 +212,138 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
             if (state is ProviderDashboardLoading) {
               return const Center(
                 child: CircularProgressIndicator(
-                  color: Color(0xFF2563EB),
+                  color: Color(0xFF10B981),
                 ),
               );
             }
 
             if (state is ProviderDashboardLoaded) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildWelcomeCard(state),
-                    const SizedBox(height: 20),
-                    const SizedBox(height: 20),
+              return RefreshIndicator(
+                onRefresh: _refreshDashboard,
+                color: const Color(0xFF10B981),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildWelcomeCard(state),
+                      const SizedBox(height: 20),
 
-// Stats Grid
-                    Row(
-                      children: [
-                        _buildStatsCard(
-                          icon: Icons.pending_actions,
-                          label: 'Pending',
-                          value: state.totalPending.toString(),
-                          color: Colors.orange,
-                          bgColor: Colors.orange.shade50,
-                        ),
-                        const SizedBox(width: 12),
-                        _buildStatsCard(
-                          icon: Icons.check_circle_outline,
-                          label: 'Accepted',
-                          value: state.totalAccepted.toString(),
-                          color: Colors.blue,
-                          bgColor: Colors.blue.shade50,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        // ✅ CORRECT: Expanded directly inside Row, GestureDetector inside it
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const CompletedHistoryScreen(),
-                                ),
-                              );
-                            },
-                            child: _buildStatsCard(
-                              icon: Icons.done_all,
-                              label: 'Completed',
-                              value: state.totalCompleted.toString(),
-                              color: Colors.green,
-                              bgColor: Colors.green.shade50,
+                      // Stats Grid
+                      Row(
+                        children: [
+                          _buildStatsCard(
+                            icon: Icons.pending_actions,
+                            label: 'Pending',
+                            value: state.totalPending.toString(),
+                            color: Colors.orange,
+                            bgColor: Colors.orange.shade50,
+                          ),
+                          const SizedBox(width: 12),
+                          _buildStatsCard(
+                            icon: Icons.check_circle_outline,
+                            label: 'Accepted',
+                            value: state.totalAccepted.toString(),
+                            color: Colors.blue,
+                            bgColor: Colors.blue.shade50,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const CompletedHistoryScreen(),
+                                  ),
+                                );
+                              },
+                              child: _buildStatsCard(
+                                icon: Icons.done_all,
+                                label: 'Completed',
+                                value: state.totalCompleted.toString(),
+                                color: Colors.green,
+                                bgColor: Colors.green.shade50,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatsCard(
-                            icon: Icons.currency_rupee,
-                            label: 'Earnings',
-                            value: '₹${state.totalEarnings}',
-                            color: Colors.purple,
-                            bgColor: Colors.purple.shade50,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatsCard(
+                              icon: Icons.currency_rupee,
+                              label: 'Earnings',
+                              value: '₹${state.totalEarnings}',
+                              color: Colors.purple,
+                              bgColor: Colors.purple.shade50,
+                            ),
                           ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      _buildSectionHeader(
+                        title: 'Pending Requests',
+                        count: state.totalPending,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(height: 12),
+                      if (state.pendingBookings.isEmpty)
+                        _buildEmptyState(
+                          icon: Icons.inbox,
+                          message: 'No pending requests',
+                        )
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: state.pendingBookings.length,
+                          itemBuilder: (context, index) {
+                            final booking = state.pendingBookings[index];
+                            return _buildPendingBookingCard(
+                              context,
+                              booking,
+                              viewModel,
+                            );
+                          },
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSectionHeader(
-                      title: 'Pending Requests',
-                      count: state.totalPending,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(height: 12),
-                    if (state.pendingBookings.isEmpty)
-                      _buildEmptyState(
-                        icon: Icons.inbox,
-                        message: 'No pending requests',
-                      )
-                    else
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: state.pendingBookings.length,
-                        itemBuilder: (context, index) {
-                          final booking = state.pendingBookings[index];
-                          return _buildPendingBookingCard(
-                            context,
-                            booking,
-                            viewModel,
-                          );
-                        },
+
+                      const SizedBox(height: 24),
+
+                      _buildSectionHeader(
+                        title: 'Active Jobs',
+                        count: state.totalAccepted,
+                        color: Colors.blue,
                       ),
-                    const SizedBox(height: 24),
-                    _buildSectionHeader(
-                      title: 'Active Jobs',
-                      count: state.totalAccepted,
-                      color: Colors.blue,
-                    ),
-                    const SizedBox(height: 12),
-                    if (state.acceptedBookings.isEmpty)
-                      _buildEmptyState(
-                        icon: Icons.work_off,
-                        message: 'No active jobs',
-                      )
-                    else
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: state.acceptedBookings.length,
-                        itemBuilder: (context, index) {
-                          final booking = state.acceptedBookings[index];
-                          return _buildAcceptedBookingCard(
-                            context,
-                            booking,
-                            viewModel,
-                          );
-                        },
-                      ),
-                    const SizedBox(height: 80),
-                  ],
+                      const SizedBox(height: 12),
+                      if (state.acceptedBookings.isEmpty)
+                        _buildEmptyState(
+                          icon: Icons.work_off,
+                          message: 'No active jobs',
+                        )
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: state.acceptedBookings.length,
+                          itemBuilder: (context, index) {
+                            final booking = state.acceptedBookings[index];
+                            return _buildAcceptedBookingCard(
+                              context,
+                              booking,
+                              viewModel,
+                            );
+                          },
+                        ),
+
+                      const SizedBox(height: 80),
+                    ],
+                  ),
                 ),
               );
             }
@@ -350,18 +357,25 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
     );
   }
 
-  // ============ UI Components ============
+
 
   Widget _buildWelcomeCard(ProviderDashboardLoaded state) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
+          colors: [Color(0xFF059669), Color(0xFF10B981)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.25),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,7 +406,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               ),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(10),
@@ -416,7 +430,14 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               children: [
                 const Icon(Icons.check_circle, color: Colors.white, size: 14),
                 const SizedBox(width: 4),
-                const Text('Verified', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
+                const Text(
+                  'Verified',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
@@ -424,13 +445,20 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('You have', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                const Text(
+                  'You have',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
+                ),
                 Row(
                   children: [
                     Container(
@@ -441,11 +469,21 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                       ),
                       child: Text(
                         '${state.totalPending}',
-                        style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                          color: Color(0xFF059669),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Text('pending requests', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    const Text(
+                      'pending requests',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -468,8 +506,8 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade100, width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.04),
@@ -947,7 +985,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
             ElevatedButton(
               onPressed: () => _viewModel.loadDashboard(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
+                backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
