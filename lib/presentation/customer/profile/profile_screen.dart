@@ -64,6 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           backgroundColor: Colors.white,
           foregroundColor: Colors.black87,
           elevation: 0,
+          centerTitle: false,
           actions: [
             if (_isEditing)
               TextButton(
@@ -123,29 +124,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Profile Avatar
+                    // ---- Avatar with gradient ----
                     Center(
                       child: Container(
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0F766E).withOpacity(0.08),
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF0F766E).withOpacity(0.15),
-                            width: 2,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0F766E).withOpacity(0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.person,
                           size: 50,
-                          color: const Color(0xFF0F766E),
+                          color: Colors.white,
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Edit Toggle
+                    // ---- Edit button (when not editing) ----
                     if (!_isEditing)
                       Center(
                         child: TextButton.icon(
@@ -158,47 +166,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           label: const Text('Edit Profile'),
                           style: TextButton.styleFrom(
                             foregroundColor: const Color(0xFF0F766E),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              side: BorderSide(
+                                color: const Color(0xFF0F766E).withOpacity(0.3),
+                              ),
+                            ),
                           ),
                         ),
                       ),
 
                     const SizedBox(height: 24),
 
-                    // Name
-                    _buildTextField(
+                    // ---- Info Cards ----
+                    _buildInfoCard(
+                      icon: Icons.person_outline,
                       label: 'Full Name',
                       controller: _nameController,
                       enabled: _isEditing,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
-                    // Phone (read-only)
-                    _buildTextField(
+                    _buildInfoCard(
+                      icon: Icons.phone_outlined,
                       label: 'Phone Number',
                       controller: _phoneController,
                       enabled: false,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
-                    // Email (read-only)
-                    _buildTextField(
+                    _buildInfoCard(
+                      icon: Icons.email_outlined,
                       label: 'Email',
                       controller: _emailController,
                       enabled: false,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
-                    // Address (editable)
-                    _buildTextField(
+                    _buildInfoCard(
+                      icon: Icons.location_on_outlined,
                       label: 'Address',
                       controller: _addressController,
                       enabled: _isEditing,
                       maxLines: 3,
                     ),
 
+                    // ---- Update Location (when editing) ----
                     if (_isEditing) ...[
-                      const SizedBox(height: 12),
-                      // Update Location Button
+                      const SizedBox(height: 8),
                       TextButton.icon(
                         onPressed: () async {
                           final result = await Navigator.push(
@@ -218,8 +234,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             });
                           }
                         },
-                        icon: const Icon(Icons.location_on, size: 18),
-                        label: const Text('Update Address on Map'),
+                        icon: const Icon(Icons.map, size: 18),
+                        label: const Text('Pick Address from Map'),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF0F766E),
                         ),
@@ -228,26 +244,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Logout Button
+                    // ---- Logout Button ----
                     SizedBox(
                       width: double.infinity,
                       height: 50,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          _showLogoutConfirmation(context);
-                        },
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showLogoutConfirmation(context),
+                        icon: const Icon(Icons.logout, size: 20),
+                        label: const Text(
+                          'LOGOUT',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
                           side: const BorderSide(color: Colors.red),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'LOGOUT',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
                           ),
                         ),
                       ),
@@ -258,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             }
 
-            // Initial state - show loading
+            // Initial state – show loading
             return const Center(
               child: CircularProgressIndicator(
                 color: Color(0xFF0F766E),
@@ -270,53 +285,81 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildTextField({
+  // ----- Info Card Widget -----
+  Widget _buildInfoCard({
+    required IconData icon,
     required String label,
     required TextEditingController controller,
     bool enabled = true,
     int maxLines = 1,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade600,
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        ),
-        const SizedBox(height: 4),
-        TextField(
-          controller: controller,
-          enabled: enabled,
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F766E).withOpacity(0.08),
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: enabled ? Colors.grey.shade300 : Colors.grey.shade200,
-              ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: Colors.grey.shade300,
-              ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: const Color(0xFF0F766E),
             ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: Colors.grey.shade200,
-              ),
-            ),
-            filled: true,
-            fillColor: enabled ? Colors.white : Colors.grey.shade50,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade500,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: controller,
+                  enabled: enabled,
+                  maxLines: maxLines,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    hintText: 'Enter $label',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 14,
+                    ),
+                  ),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -351,7 +394,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         address: address.isNotEmpty ? address : null,
       );
 
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -365,7 +407,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
-      // Error is handled by ViewModel error state
       setState(() {
         _isSaving = false;
       });
@@ -375,35 +416,122 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showLogoutConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text('Logout?'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await Supabase.instance.client.auth.signOut();
-              if (context.mounted) {
-                Navigator.pushReplacementNamed(context, '/customer-login');
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.4),
+      builder: (dialogContext) => Dialog(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
               ),
-            ),
-            child: const Text('Logout'),
+            ],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ---- Icon ----
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.logout,
+                  size: 34,
+                  color: Colors.red.shade700,
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // ---- Title ----
+              Text(
+                'Logout?',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade900,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // ---- Description ----
+              Text(
+                'Are you sure you want to logout?\nYou can always come back.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // ---- Buttons ----
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(dialogContext),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey.shade700,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        backgroundColor: Colors.grey.shade100,
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        // Dismiss dialog first
+                        Navigator.pop(dialogContext);
+                        // Then sign out
+                        await Supabase.instance.client.auth.signOut();
+                        if (context.mounted) {
+                          Navigator.pushReplacementNamed(context, '/customer-login');
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

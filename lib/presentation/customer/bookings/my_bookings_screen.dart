@@ -15,6 +15,8 @@ class MyBookingsScreen extends StatefulWidget {
 class _MyBookingsScreenState extends State<MyBookingsScreen> {
   late MyBookingsViewModel _viewModel;
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -27,6 +29,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         _viewModel.loadBookings();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -46,14 +54,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           backgroundColor: Colors.white,
           foregroundColor: Colors.black87,
           elevation: 0,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.black54),
-              onPressed: () {
-                _viewModel.loadBookings();
-              },
-            ),
-          ],
+
         ),
         body: Consumer<MyBookingsViewModel>(
           builder: (context, viewModel, child) {
@@ -62,11 +63,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             if (state is MyBookingsError) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                  ),
                 );
                 viewModel.resetError();
               });
-              return _buildErrorState();
+              return _buildErrorState(viewModel);
             }
 
             if (state is MyBookingsLoading) {
@@ -78,48 +82,53 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             }
 
             if (state is MyBookingsLoaded) {
+              // Show empty state if no bookings
               if (state.bookings.isEmpty) {
                 return _buildEmptyState();
               }
 
-              return Column(
-                children: [
-                  // Filter Chips - Modern Design
-                  Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: SizedBox(
-                      height: 40,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        children: [
-                          _buildFilterChip('All', state.selectedFilter, viewModel),
-                          _buildFilterChip('pending', state.selectedFilter, viewModel),
-                          _buildFilterChip('accepted', state.selectedFilter, viewModel),
-                          _buildFilterChip('in_progress', state.selectedFilter, viewModel),
-                          _buildFilterChip('completed', state.selectedFilter, viewModel),
-                          _buildFilterChip('confirmed', state.selectedFilter, viewModel),
-                          _buildFilterChip('cancelled', state.selectedFilter, viewModel),
-                        ],
+              return RefreshIndicator(
+                onRefresh: () => viewModel.loadBookings(),
+                color: const Color(0xFF2563EB),
+                backgroundColor: Colors.white,
+                child: Column(
+                  children: [
+                    // Filter Chips (sticky header)
+                    Container(
+                      color: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: SizedBox(
+                        height: 40,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          children: [
+                            _buildFilterChip('All', state.selectedFilter, viewModel),
+                            _buildFilterChip('pending', state.selectedFilter, viewModel),
+                            _buildFilterChip('accepted', state.selectedFilter, viewModel),
+                            _buildFilterChip('in_progress', state.selectedFilter, viewModel),
+                            _buildFilterChip('completed', state.selectedFilter, viewModel),
+                            _buildFilterChip('cancelled', state.selectedFilter, viewModel),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
 
-                  const SizedBox(height: 8),
-
-                  // Bookings List
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: state.filteredBookings.length,
-                      itemBuilder: (context, index) {
-                        final booking = state.filteredBookings[index];
-                        return _buildBookingCard(context, booking, viewModel);
-                      },
+                    // Bookings List
+                    Expanded(
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: state.filteredBookings.length,
+                        itemBuilder: (context, index) {
+                          final booking = state.filteredBookings[index];
+                          return _buildBookingCard(context, booking, viewModel);
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               );
             }
 
@@ -132,21 +141,18 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
+
   Widget _buildFilterChip(String label, String selectedFilter, MyBookingsViewModel viewModel) {
     final isSelected = label == selectedFilter;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
       child: InkWell(
-        onTap: () {
-          viewModel.filterByStatus(label);
-        },
+        onTap: () => viewModel.filterByStatus(label),
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFF2563EB)
-                : Colors.grey.shade100,
+            color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -163,6 +169,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
+
   Widget _buildBookingCard(BuildContext context, Booking booking, MyBookingsViewModel viewModel) {
     return Card(
       elevation: 0,
@@ -176,7 +183,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: Booking Number & Status
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -257,7 +264,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               ),
             const SizedBox(height: 10),
 
-            // Details Row - Modern Badges
+
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -292,6 +299,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
+
   Widget _buildInfoChip({
     required IconData icon,
     required String label,
@@ -325,15 +333,15 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
+
   List<Widget> _buildActionButtons(BuildContext context, Booking booking, MyBookingsViewModel viewModel) {
     final List<Widget> buttons = [];
+
 
     if (booking.status == 'pending') {
       buttons.add(
         TextButton(
-          onPressed: () {
-            _showCancelConfirmation(context, booking.id, viewModel);
-          },
+          onPressed: () => _showCancelConfirmation(context, booking.id, viewModel),
           style: TextButton.styleFrom(
             foregroundColor: Colors.red,
             minimumSize: Size.zero,
@@ -348,32 +356,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       );
     }
 
+
     if (booking.status == 'completed') {
       buttons.add(
         TextButton(
-          onPressed: () {
-            viewModel.confirmBooking(booking.id);
-          },
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF10B981),
-            minimumSize: Size.zero,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          child: const Text(
-            'Confirm',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-        ),
-      );
-    }
-
-    if (booking.status == 'confirmed') {
-      buttons.add(
-        TextButton(
-          onPressed: () {
-            _showRatingDialog(context, booking.id, viewModel);
-          },
+          onPressed: () => _showRatingDialog(context, booking.id, viewModel),
           style: TextButton.styleFrom(
             foregroundColor: Colors.orange,
             minimumSize: Size.zero,
@@ -388,10 +375,30 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       );
     }
 
+
+    if (booking.status == 'confirmed') {
+      buttons.add(
+        TextButton(
+          onPressed: () => _showRatingDialog(context, booking.id, viewModel),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.orange,
+            minimumSize: Size.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: const Text(
+            'Rate',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ),
+      );
+    }
+
+
     buttons.add(
       TextButton(
         onPressed: () {
-          // Navigate to booking detail
+          // TODO: Navigate to booking detail
         },
         style: TextButton.styleFrom(
           foregroundColor: const Color(0xFF2563EB),
@@ -408,6 +415,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
     return buttons;
   }
+
 
   Widget _buildEmptyState() {
     return Center(
@@ -466,7 +474,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
-  Widget _buildErrorState() {
+
+  Widget _buildErrorState(MyBookingsViewModel viewModel) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -504,9 +513,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                _viewModel.loadBookings();
-              },
+              onPressed: () => viewModel.loadBookings(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2563EB),
                 foregroundColor: Colors.white,
@@ -522,6 +529,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       ),
     );
   }
+
 
   void _showCancelConfirmation(BuildContext context, String bookingId, MyBookingsViewModel viewModel) {
     showDialog(
@@ -558,6 +566,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       ),
     );
   }
+
 
   void _showRatingDialog(BuildContext context, String bookingId, MyBookingsViewModel viewModel) {
     double rating = 3;

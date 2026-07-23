@@ -41,14 +41,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
           backgroundColor: Colors.white,
           foregroundColor: Colors.black87,
           elevation: 0,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.black54),
-              onPressed: () {
-                _viewModel.refreshServices();
-              },
-            ),
-          ],
+          // Refresh button removed – now use pull‑to‑refresh
         ),
         body: Consumer<ServiceViewModel>(
           builder: (context, viewModel, child) {
@@ -75,111 +68,75 @@ class _ServicesScreenState extends State<ServicesScreen> {
             }
 
             if (state is ServiceLoaded) {
-              return Column(
-                children: [
-                  // Category Tabs - Cleaner Design
-                  Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: SizedBox(
-                      height: 42,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: state.categories.length,
-                        itemBuilder: (context, index) {
-                          final category = state.categories[index];
-                          final isSelected = category == state.selectedCategory;
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                            child: InkWell(
-                              onTap: () {
-                                viewModel.filterByCategory(category);
-                              },
-                              borderRadius: BorderRadius.circular(20),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? const Color(0xFF2563EB)
-                                      : Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  category,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Colors.white
-                                        : Colors.grey.shade700,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                    fontSize: 13,
-                                  ),
+              return RefreshIndicator(
+                onRefresh: () => viewModel.refreshServices(),
+                color: const Color(0xFF2563EB),
+                backgroundColor: Colors.white,
+                child: CustomScrollView(
+                  slivers: [
+                    // Category Tabs (sticky header)
+                    SliverPersistentHeader(
+                      delegate: _CategoryHeaderDelegate(
+                        categories: state.categories,
+                        selectedCategory: state.selectedCategory,
+                        onCategoryTap: viewModel.filterByCategory,
+                      ),
+                      pinned: true,
+                    ),
+                    // Services Grid
+                    SliverPadding(
+                      padding: const EdgeInsets.all(16),
+                      sliver: SliverGrid(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.85,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 14,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                            final service = state.filteredServices[index];
+                            return _buildServiceCard(context, service);
+                          },
+                          childCount: state.filteredServices.length,
+                        ),
+                      ),
+                    ),
+                    // Empty state (when no services)
+                    if (state.filteredServices.isEmpty)
+                      SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 64,
+                                color: Colors.grey.shade300,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No services available',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey.shade500,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Services Grid
-                  Expanded(
-                    child: state.filteredServices.isEmpty
-                        ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: Colors.grey.shade300,
+                              const SizedBox(height: 4),
+                              Text(
+                                'Try selecting a different category',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade400,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No services available',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey.shade500,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Try selecting a different category',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade400,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    )
-                        : GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.85,
-                        crossAxisSpacing: 14,
-                        mainAxisSpacing: 14,
-                      ),
-                      itemCount: state.filteredServices.length,
-                      itemBuilder: (context, index) {
-                        final service = state.filteredServices[index];
-                        return _buildServiceCard(context, service);
-                      },
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               );
             }
 
@@ -197,7 +154,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade100, width: 1),
+        side: BorderSide(
+          color: Colors.grey.shade200,
+          width: 1,
+        ),
       ),
       child: InkWell(
         onTap: () {
@@ -218,11 +178,18 @@ class _ServicesScreenState extends State<ServicesScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Service Icon with Background
+              // Service Icon with Gradient Background
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2563EB).withOpacity(0.08),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFF2563EB).withOpacity(0.12),
+                      const Color(0xFF2563EB).withOpacity(0.04),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
@@ -270,7 +237,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
               const SizedBox(height: 2),
               // Estimated Time
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(10),
@@ -321,5 +288,77 @@ class _ServicesScreenState extends State<ServicesScreen> {
     }
 
     return Icons.build;
+  }
+}
+
+class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final List<String> categories;
+  final String selectedCategory;
+  final Function(String) onCategoryTap;
+
+  _CategoryHeaderDelegate({
+    required this.categories,
+    required this.selectedCategory,
+    required this.onCategoryTap,
+  });
+
+  @override
+  double get minExtent => 58;
+  @override
+  double get maxExtent => 58;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Colors.white,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: categories.length,
+        itemBuilder: (context, index) {
+          final category = categories[index];
+          final isSelected = category == selectedCategory;
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: InkWell(
+              onTap: () => onCategoryTap(category),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFF2563EB)
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: isSelected
+                      ? [
+                    BoxShadow(
+                      color: const Color(0xFF2563EB).withOpacity(0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                      : null,
+                ),
+                child: Text(
+                  category,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.grey.shade700,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return oldDelegate != this;
   }
 }

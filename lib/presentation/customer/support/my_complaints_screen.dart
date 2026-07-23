@@ -120,6 +120,7 @@ class _MyComplaintsScreenState extends State<MyComplaintsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Row: Booking # + Status badge
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -169,6 +170,7 @@ class _MyComplaintsScreenState extends State<MyComplaintsScreen> {
             ),
             const SizedBox(height: 6),
 
+            // Service name
             if (complaint.serviceName != null)
               Text(
                 'Service: ${complaint.serviceName}',
@@ -179,6 +181,7 @@ class _MyComplaintsScreenState extends State<MyComplaintsScreen> {
               ),
             const SizedBox(height: 6),
 
+            // Reason
             Text(
               complaint.reason,
               style: const TextStyle(
@@ -190,6 +193,7 @@ class _MyComplaintsScreenState extends State<MyComplaintsScreen> {
             ),
             const SizedBox(height: 8),
 
+            // Date
             Text(
               '${complaint.createdAt.day}/${complaint.createdAt.month}/${complaint.createdAt.year}',
               style: TextStyle(
@@ -198,6 +202,7 @@ class _MyComplaintsScreenState extends State<MyComplaintsScreen> {
               ),
             ),
 
+            // Evidence photos indicator
             if (complaint.evidencePhotos != null &&
                 complaint.evidencePhotos!.isNotEmpty)
               Padding(
@@ -220,6 +225,44 @@ class _MyComplaintsScreenState extends State<MyComplaintsScreen> {
                   ],
                 ),
               ),
+
+            // ===== NEW: Resolution details (only when resolved) =====
+            if (complaint.status == 'resolved') ...[
+              if (complaint.resolutionNotes != null &&
+                  complaint.resolutionNotes!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Resolution: ${complaint.resolutionNotes}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              if (complaint.refundAmount != null && complaint.refundAmount! > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.currency_rupee,
+                        size: 14,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Refund: ₹${complaint.refundAmount}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ],
         ),
       ),

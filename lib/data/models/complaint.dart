@@ -9,6 +9,7 @@ class Complaint {
   final String status;
   final String? resolvedByAdminId;
   final int? refundAmount;
+  final String? resolutionNotes;
   final DateTime createdAt;
   final String? bookingNumber;
   final String? serviceName;
@@ -23,6 +24,7 @@ class Complaint {
     required this.status,
     this.resolvedByAdminId,
     this.refundAmount,
+    this.resolutionNotes, // new parameter
     required this.createdAt,
     this.bookingNumber,
     this.serviceName,
@@ -42,6 +44,7 @@ class Complaint {
       status: json['status'] ?? 'open',
       resolvedByAdminId: json['resolved_by_admin_id'],
       refundAmount: json['refund_amount'],
+      resolutionNotes: json['resolution_notes'], // NEW: parse resolution_notes
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : DateTime.now(),
