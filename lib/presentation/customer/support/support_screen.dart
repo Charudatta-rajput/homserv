@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'raise_complaint_screen.dart';
 import 'my_complaints_screen.dart';
 
-
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
 
@@ -48,14 +47,6 @@ class _SupportScreenState extends State<SupportScreen> {
           backgroundColor: Colors.white,
           foregroundColor: Colors.black87,
           elevation: 0,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.black54),
-              onPressed: () {
-                _viewModel.loadComplaints();
-              },
-            ),
-          ],
         ),
         body: Consumer<ComplaintViewModel>(
           builder: (context, viewModel, child) {
@@ -73,7 +64,7 @@ class _SupportScreenState extends State<SupportScreen> {
               });
             }
 
-            return Padding(
+            return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +249,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Recent Complaints List
+                  // Recent Complaints List (only 3 most recent, no extra scrolling)
                   if (state is ComplaintLoading)
                     const Center(
                       child: Padding(
@@ -269,16 +260,10 @@ class _SupportScreenState extends State<SupportScreen> {
                       ),
                     )
                   else if (state is ComplaintLoaded && state.complaints.isNotEmpty)
-                    Expanded(
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: state.complaints.length > 3 ? 3 : state.complaints.length,
-                        itemBuilder: (context, index) {
-                          final complaint = state.complaints[index];
-                          return _buildComplaintCard(complaint);
-                        },
-                      ),
+                    Column(
+                      children: state.complaints.take(3).map((complaint) {
+                        return _buildComplaintCard(complaint);
+                      }).toList(),
                     )
                   else
                     Container(

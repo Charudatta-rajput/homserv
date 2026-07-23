@@ -7,16 +7,27 @@ import '../support/support_screen.dart';
 import '../profile/profile_screen.dart';
 import '../providers/provider_list_screen.dart';
 import 'customer_home_viewmodel.dart';
+import 'notification_viewmodel.dart';
 import '../../../data/models/booking.dart';
 import '../../../data/models/service.dart';
+import '../../../data/models/notification.dart';
 
 class CustomerHome extends StatelessWidget {
   const CustomerHome({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => CustomerHomeViewModel()..loadRecentBookings(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => CustomerHomeViewModel()..loadRecentBookings(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NotificationViewModel()
+            ..setUserId(Supabase.instance.client.auth.currentUser?.id ?? '')
+            ..loadNotifications(),
+        ),
+      ],
       child: Scaffold(
         backgroundColor: const Color(0xFFF1F5F9),
         body: const _CustomerHomeContent(),
@@ -273,7 +284,7 @@ class _CustomerHomeContent extends StatelessWidget {
   }
 }
 
-// ========== HEADER WITH OVERLAY (perfected alignment) ==========
+// ========== HEADER WITH NOTIFICATIONS ==========
 class _Header extends StatefulWidget {
   const _Header();
 
@@ -405,6 +416,7 @@ class _HeaderState extends State<_Header> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<CustomerHomeViewModel>();
+    final notificationViewModel = context.watch<NotificationViewModel>();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -436,11 +448,35 @@ class _HeaderState extends State<_Header> {
                   ),
                 ),
                 const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.notifications_outlined, color: Colors.white70, size: 22),
-                  onPressed: () {},
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                // Notification Bell with Badge
+                Stack(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.white70,
+                        size: 22,
+                      ),
+                      onPressed: () {
+                        _showNotificationsSheet(context);
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    if (notificationViewModel.unreadCount > 0)
+                      Positioned(
+                        right: 4,
+                        top: 4,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 12),
                 IconButton(
@@ -542,6 +578,249 @@ class _HeaderState extends State<_Header> {
         ),
       ),
     );
+  }
+
+  // ========== NOTIFICATIONS BOTTOM SHEET (FIXED WITH ChangeNotifierProvider.value) ==========
+  void _showNotificationsSheet(BuildContext context) {
+    final notificationViewModel = context.read<NotificationViewModel>();
+    notificationViewModel.markAllAsRead();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => ChangeNotifierProvider.value(
+        value: notificationViewModel,
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Notifications',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        notificationViewModel.loadNotifications();
+                      },
+                      child: const Text(
+                        'Refresh',
+                        style: TextStyle(
+                          color: Color(0xFF0F766E),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: Consumer<NotificationViewModel>(
+                  builder: (context, vm, child) {
+                    if (vm.status == NotificationStateStatus.loading) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF0F766E),
+                        ),
+                      );
+                    }
+                    if (vm.notifications.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.notifications_off_outlined,
+                              size: 48,
+                              color: Colors.grey.shade300,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No notifications',
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      itemCount: vm.notifications.length,
+                      itemBuilder: (context, index) {
+                        final notification = vm.notifications[index];
+                        return _buildNotificationTile(context, notification, vm);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationTile(
+      BuildContext context,
+      AppNotification notification,
+      NotificationViewModel viewModel,
+      ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: notification.isRead ? Colors.white : Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: notification.isRead ? Colors.grey.shade100 : Colors.blue.shade200,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: notification.iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              notification.icon,
+              size: 20,
+              color: notification.iconColor,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  notification.title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  notification.message,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _timeAgo(notification.createdAt),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+                if (!notification.isRead)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'New',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: Colors.blue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (notification.type == 'booking_completed')
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showRatingForBooking(context, notification);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.orange,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Rate',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showRatingForBooking(BuildContext context, AppNotification notification) {
+    final bookingId = notification.actionData?['booking_id'];
+    if (bookingId != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Rate booking: ${notification.actionData?['service_name'] ?? 'Service'}'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  String _timeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 30) {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    } else if (difference.inDays > 7) {
+      return '${(difference.inDays / 7).floor()}w ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
   }
 }
 

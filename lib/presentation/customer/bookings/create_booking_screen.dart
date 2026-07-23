@@ -68,9 +68,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
       lastDate: DateTime.now().add(const Duration(days: 30)),
     );
     if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
+      setState(() => _selectedDate = picked);
     }
   }
 
@@ -80,9 +78,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
       initialTime: _selectedTime,
     );
     if (picked != null && picked != _selectedTime) {
-      setState(() {
-        _selectedTime = picked;
-      });
+      setState(() => _selectedTime = picked);
     }
   }
 
@@ -90,10 +86,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
     final customerId = Supabase.instance.client.auth.currentUser?.id;
     if (customerId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please login again'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Please login again'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -126,26 +119,21 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pushReplacement(
+        // ✅ Pop back to the home screen, then push MyBookings
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => const MyBookingsScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const MyBookingsScreen()),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to book: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Failed to book: ${e.toString()}'), backgroundColor: Colors.red),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -156,10 +144,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
       appBar: AppBar(
         title: const Text(
           'Book Service',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -170,269 +155,55 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Service & Provider Info Card
+            // Service & Provider Card
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade100),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.05),
-                    blurRadius: 10,
+                    color: Colors.grey.withOpacity(0.06),
+                    blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB).withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.build,
-                          color: Color(0xFF2563EB),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Service',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade500,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              widget.serviceName,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.person,
-                          color: Colors.green,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Provider',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade500,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              widget.provider.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.currency_rupee,
-                          color: Colors.orange,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Price',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade500,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '₹${widget.fixedPrice}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF10B981),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.star,
-                          color: Colors.orange,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Rating',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade500,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '${widget.provider.getRatingDisplay()} ★',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  _buildInfoRow(Icons.build, 'Service', widget.serviceName, Colors.blue),
+                  const Divider(height: 20),
+                  _buildInfoRow(Icons.person, 'Provider', widget.provider.name, Colors.green),
+                  const Divider(height: 20),
+                  _buildInfoRow(Icons.currency_rupee, 'Price', '₹${widget.fixedPrice}', Colors.orange),
+                  const Divider(height: 20),
+                  _buildInfoRow(Icons.star, 'Rating', '${widget.provider.getRatingDisplay()} ★', Colors.amber),
                 ],
               ),
             ),
-
             const SizedBox(height: 24),
 
-            // Date & Time Selection
+            // Date & Time
             const Text(
               'Select Date & Time',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
             ),
             const SizedBox(height: 12),
-
             Row(
               children: [
                 Expanded(
-                  child: InkWell(
+                  child: _buildPicker(
+                    icon: Icons.calendar_today,
+                    label: '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
                     onTap: () => _selectDate(context),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.grey.shade200),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_today,
-                            color: Color(0xFF2563EB),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: InkWell(
+                  child: _buildPicker(
+                    icon: Icons.access_time,
+                    label: _selectedTime.format(context),
                     onTap: () => _selectTime(context),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.grey.shade200),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.access_time,
-                            color: Color(0xFF2563EB),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            _selectedTime.format(context),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -442,46 +213,32 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
             // Address
             const Text(
               'Service Address',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
             ),
             const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border.all(color: Colors.grey.shade200),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
               ),
               child: _isLoadingAddress
                   ? const Center(
                 child: SizedBox(
                   height: 20,
                   width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Color(0xFF2563EB),
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2563EB)),
                 ),
               )
                   : Row(
                 children: [
-                  const Icon(
-                    Icons.location_on,
-                    color: Colors.red,
-                    size: 20,
-                  ),
+                  const Icon(Icons.location_on, color: Colors.red, size: 22),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       _customerAddress ?? 'No address saved',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF1E293B),
-                      ),
+                      style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B)),
                     ),
                   ),
                 ],
@@ -492,11 +249,7 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
             // Notes
             const Text(
               'Notes (Optional)',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -524,9 +277,9 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
             ),
             const SizedBox(height: 28),
 
-            // Total Amount
+            // Total
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
@@ -540,19 +293,11 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                 children: [
                   const Text(
                     'Total Amount',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   Text(
                     '₹${widget.fixedPrice}',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ],
               ),
@@ -568,31 +313,81 @@ class _CreateBookingScreenState extends State<CreateBookingScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
                 child: _isLoading
                     ? const SizedBox(
                   height: 24,
                   width: 24,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                 )
                     : const Text(
                   'CONFIRM BOOKING',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                 ),
               ),
             ),
             const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value, Color iconColor) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPicker({required IconData icon, required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFF2563EB), size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
+              ),
+            ),
           ],
         ),
       ),
